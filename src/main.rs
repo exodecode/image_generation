@@ -2,34 +2,26 @@ use image::{ImageBuffer, RgbImage};
 use rand::prelude::*;
 use rand_pcg::Pcg64;
 use rand_seeder::Seeder;
-use std::ops::RangeInclusive;
 
 const WIDTH: usize = 256;
 const HEIGHT: usize = 256;
-const NAME: &str = "image1.png";
+const NAME: &str = "ca.png";
 const SEED: &str = "asdf";
 
-//const HCorner: usize = HEIGHT - 1;
-//const WCorner: usize = WIDTH - 1;
 const _H: usize = HEIGHT - 2;
 const _W: usize = WIDTH - 2;
 
-const UPPER_LEFT: (usize,usize) = (0, 0);
-const UPPER_RIGHT: (usize,usize) = (WIDTH - 1, 0);
-const LOWER_LEFT: (usize,usize) = (0, HEIGHT - 1);
-const LOWER_RIGHT: (usize,usize) = (0, HEIGHT - 1);
-
-const TOP_EDGE: (RangeInclusive<usize>, usize) = (1..=_W, 0);
-const BOTTOM_EDGE: (RangeInclusive<usize>, usize) = (1..=_W, HEIGHT);
-const LEFT_EDGE: (usize, RangeInclusive<usize>) = (0, 1..=_H);
-const RIGHT_EDGE: (usize, RangeInclusive<usize>) = (WIDTH, 1..=_H);
+pub const UPPER_LEFT: (usize, usize) = (0, 0);
+pub const UPPER_RIGHT: (usize, usize) = (WIDTH - 1, 0);
+pub const LOWER_LEFT: (usize, usize) = (0, HEIGHT - 1);
+pub const LOWER_RIGHT: (usize, usize) = (WIDTH - 1, HEIGHT - 1);
 
 pub fn main() {
     //let grid = grid(&checkerboard);
     let mut grid = white_noise();
 
+    grid = cellular_automata_pass(grid);
     //for _i in 0..3 {
-        //grid = cellular_automata_pass(grid);
     //}
 
     grid_to_image(grid, NAME);
@@ -40,134 +32,115 @@ fn cellular_automata_pass(mut noise: [[u8; HEIGHT]; WIDTH]) -> [[u8; HEIGHT]; WI
 
     for y in 0..HEIGHT {
         for x in 0..WIDTH {
-            noise[x][y] = 0;
+            //noise[x][y] = 0;
 
             let pair = (x, y);
 
-            let neighbors :[u8; 8] = match pair{
-                //fill
-                (1..=_W, 1..=_H) =>
-                    [
-                        noise[x - 1][y - 1], //Upper left
-                        noise[x][y + 1], //Upper mid
-                        noise[x + 1][y + 1], //Upper right
-
-                        noise[x - 1][y], //Mid left
-                        noise[x + 1][y], //Mid right
-
-                        noise[x - 1][y - 1], //Lower left
-                        noise[x][y - 1], //Lower mid
-                        noise[x + 1][y - 1], //Lower right
-                    ],
+            let neighbors: [u8; 8] = match pair {
+                //edges
+                //top
+                (1..=_W, 0) => [
+                    2,                   //Upper left
+                    2,                   //Upper mid
+                    2,                   //Upper right
+                    noise[x - 1][y],     //Mid left
+                    noise[x + 1][y],     //Mid right
+                    noise[x - 1][y + 1], //Lower left
+                    noise[x][y + 1],     //Lower mid
+                    noise[x + 1][y + 1], //Lower right
+                ],
+                //bottom
+                (1..=_W, HEIGHT) => [
+                    noise[x - 1][y - 1], //Upper left
+                    noise[x][y - 1],     //Upper mid
+                    noise[x + 1][y - 1], //Upper right
+                    noise[x - 1][y],     //Mid left
+                    noise[x + 1][y],     //Mid right
+                    2,                   //Lower left
+                    2,                   //Lower mid
+                    2,                   //Lower right
+                ],
+                //left
+                (0, 1..=_H) => [
+                    2,                   //Upper left
+                    noise[x][y - 1],     //Upper mid
+                    noise[x + 1][y - 1], //Upper right
+                    2,                   //Mid left
+                    noise[x + 1][y],     //Mid right
+                    2,                   //Lower left
+                    noise[x][y + 1],     //Lower mid
+                    noise[x + 1][y + 1], //Lower right
+                ],
+                //right
+                (WIDTH, 1..=_H) => [
+                    noise[x - 1][y - 1], //Upper left
+                    noise[x][y - 1],     //Upper mid
+                    2,                   //Upper right
+                    noise[x - 1][y],     //Mid left
+                    2,                   //Mid right
+                    noise[x - 1][y + 1], //Lower left
+                    noise[x][y - 1],     //Lower mid
+                    2,                   //Lower right
+                ],
                 //corners
-                UPPER_LEFT =>
-                    [
-                        2, //Upper left
-                        2, //Upper mid
-                        2, //Upper right
-
-                        2, //Mid left
-                        noise[x + 1][y], //Mid right
-
-                        2, //Lower left
-                        noise[x][y - 1], //Lower mid
-                        noise[x + 1][y - 1], //Lower right
-                    ],
-                UPPER_RIGHT =>
-                    [
-                        2, //Upper left
-                        2, //Upper mid
-                        2, //Upper right
-
-                        noise[x - 1][y], //Mid left
-                        2, //Mid right
-
-                        noise[x - 1][y - 1], //Lower left
-                        noise[x][y - 1], //Lower mid
-                        2, //Lower right
-                    ],
-                LOWER_LEFT =>
-                    [
-                        2, //Upper left
-                        noise[x][y + 1], //Upper mid
-                        noise[x + 1][y + 1], //Upper right
-
-                        2, //Mid left
-                        noise[x + 1][y], //Mid right
-
-                        2, //Lower left
-                        2, //Lower mid
-                        2, //Lower right
-                    ],
-                LOWER_RIGHT =>
-                    [
-                        noise[x - 1][y - 1], //Upper left
-                        noise[x][y + 1], //Upper mid
-                        2, //Upper right
-
-                        noise[x - 1][y], //Mid left
-                        2, //Mid right
-
-                        2, //Lower left
-                        2, //Lower mid
-                        2, //Lower right
-                    ],
-//edges
-                TOP_EDGE =>
-                    [
-                        noise[x - 1][y - 1], //Upper left
-                        noise[x][y + 1], //Upper mid
-                        noise[x + 1][y + 1], //Upper right
-
-                        noise[x - 1][y], //Mid left
-                        noise[x + 1][y], //Mid right
-
-                        noise[x - 1][y - 1], //Lower left
-                        noise[x][y - 1], //Lower mid
-                        noise[x + 1][y - 1], //Lower right
-                    ],
-                BOTTOM_EDGE =>
-                    [
-                        noise[x - 1][y - 1], //Upper left
-                        noise[x][y + 1], //Upper mid
-                        noise[x + 1][y + 1], //Upper right
-
-                        noise[x - 1][y], //Mid left
-                        noise[x + 1][y], //Mid right
-
-                        noise[x - 1][y - 1], //Lower left
-                        noise[x][y - 1], //Lower mid
-                        noise[x + 1][y - 1], //Lower right
-                    ],
-                LEFT_EDGE =>
-                    [
-                        noise[x - 1][y - 1], //Upper left
-                        noise[x][y + 1], //Upper mid
-                        noise[x + 1][y + 1], //Upper right
-
-                        noise[x - 1][y], //Mid left
-                        noise[x + 1][y], //Mid right
-
-                        noise[x - 1][y - 1], //Lower left
-                        noise[x][y - 1], //Lower mid
-                        noise[x + 1][y - 1], //Lower right
-                    ],
-                RIGHT_EDGE =>
-                    [
-                        noise[x - 1][y - 1], //Upper left
-                        noise[x][y + 1], //Upper mid
-                        noise[x + 1][y + 1], //Upper right
-
-                        noise[x - 1][y], //Mid left
-                        noise[x + 1][y], //Mid right
-
-                        noise[x - 1][y - 1], //Lower left
-                        noise[x][y - 1], //Lower mid
-                        noise[x + 1][y - 1], //Lower right
-                    ],
+                UPPER_LEFT => [
+                    2,                   //Upper left
+                    2,                   //Upper mid
+                    2,                   //Upper right
+                    2,                   //Mid left
+                    noise[x + 1][y],     //Mid right
+                    2,                   //Lower left
+                    noise[x][y + 1],     //Lower mid
+                    noise[x + 1][y + 1], //Lower right
+                ],
+                UPPER_RIGHT => [
+                    2,                   //Upper left
+                    2,                   //Upper mid
+                    2,                   //Upper right
+                    noise[x - 1][y],     //Mid left
+                    2,                   //Mid right
+                    noise[x - 1][y + 1], //Lower left
+                    noise[x][y + 1],     //Lower mid
+                    2,                   //Lower right
+                ],
+                LOWER_LEFT => [
+                    2,                   //Upper left
+                    noise[x][y - 1],     //Upper mid
+                    noise[x + 1][y - 1], //Upper right
+                    2,                   //Mid left
+                    noise[x + 1][y],     //Mid right
+                    2,                   //Lower left
+                    2,                   //Lower mid
+                    2,                   //Lower right
+                ],
+                LOWER_RIGHT => [
+                    noise[x - 1][y - 1], //Upper left
+                    noise[x][y - 1],     //Upper mid
+                    2,                   //Upper right
+                    noise[x - 1][y],     //Mid left
+                    2,                   //Mid right
+                    2,                   //Lower left
+                    2,                   //Lower mid
+                    2,                   //Lower right
+                ],
+                (_, _) => [
+                    2, //Upper left
+                    2, //Upper mid
+                    2, //Upper right
+                    2, //Mid left
+                    2, //Mid right
+                    2, //Lower left
+                    2, //Lower mid
+                    2, //Lower right
+                ],
             };
 
-            //grid[x][y] = ;
+            let mut count = 0;
+            for i in 0..8 {
+                count = if neighbors[i] == 1 { count + 1 } else { count }
+            }
+
+            noise[x][y] = if count >= 4 { 1 } else { 0 }
         }
     }
 
