@@ -15,15 +15,15 @@ pub const UPPER_LEFT: (usize, usize) = (0, 0);
 pub const UPPER_RIGHT: (usize, usize) = (WIDTH - 1, 0);
 pub const LOWER_LEFT: (usize, usize) = (0, HEIGHT - 1);
 pub const LOWER_RIGHT: (usize, usize) = (WIDTH - 1, HEIGHT - 1);
-pub const NOISE_AMOUNT: usize = 20;
+pub const NOISE_AMOUNT: usize = 70;
 
 pub fn main() {
     //let grid = grid(&checkerboard);
     let mut grid = white_noise();
 
-    grid = cellular_automata_pass(grid);
-    //for _i in 0..3 {
-    //}
+    for _i in 0..3 {
+        grid = cellular_automata_pass(grid);
+    }
 
     grid_to_image(grid, NAME);
 }
@@ -136,12 +136,12 @@ fn cellular_automata_pass(mut noise: [[u8; HEIGHT]; WIDTH]) -> [[u8; HEIGHT]; WI
                 ],
                 (_, _) => [
                     2, //Upper left
-                    2,     //Upper mid
+                    2, //Upper mid
                     2, //Upper right
-                    2,     //Mid left
-                    2,     //Mid right
+                    2, //Mid left
+                    2, //Mid right
                     2, //Lower left
-                    2,     //Lower mid
+                    2, //Lower mid
                     2, //Lower right
                 ],
             };
@@ -151,7 +151,7 @@ fn cellular_automata_pass(mut noise: [[u8; HEIGHT]; WIDTH]) -> [[u8; HEIGHT]; WI
                 count = if neighbors[i] == 1 { count + 1 } else { count }
             }
 
-            noise[x][y] = if count >= 4 { 1 } else { 0 }
+            noise[x][y] = if count > 4 { 0 } else { 1 }
         }
     }
 
@@ -164,7 +164,13 @@ fn white_noise() -> [[u8; HEIGHT]; WIDTH] {
 
     for y in 0..HEIGHT {
         for x in 0..WIDTH {
-            grid[x][y] = if rng.gen_range(0..101) > NOISE_AMOUNT {1}else{0};
+            grid[x][y] = if x == 0 || y == 0 || x == WIDTH - 1 || y == HEIGHT - 1 {
+                1
+            } else if rng.gen_range(0..101) < NOISE_AMOUNT {
+                1
+            } else {
+                0
+            }
         }
     }
 
@@ -178,9 +184,9 @@ fn grid_to_image(array: [[u8; HEIGHT]; WIDTH], name: &str) {
         for y in 0..array[x].len() {
             //*image.get_pixel_mut(x as u32, y as u32) = image::Rgb([x.try_into().unwrap(), y.try_into().unwrap(), 0]);
             *image.get_pixel_mut(x as u32, y as u32) = if array[x][y] == 1 {
-                image::Rgb([255, 255, 255])
-            } else if array[x][y] == 0 {
                 image::Rgb([0, 0, 0])
+            } else if array[x][y] == 0 {
+                image::Rgb([255, 255, 255])
             } else {
                 image::Rgb([255, 0, 0])
             }
