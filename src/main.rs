@@ -15,6 +15,7 @@ pub const UPPER_LEFT: (usize, usize) = (0, 0);
 pub const UPPER_RIGHT: (usize, usize) = (WIDTH - 1, 0);
 pub const LOWER_LEFT: (usize, usize) = (0, HEIGHT - 1);
 pub const LOWER_RIGHT: (usize, usize) = (WIDTH - 1, HEIGHT - 1);
+pub const NOISE_AMOUNT: usize = 20;
 
 pub fn main() {
     //let grid = grid(&checkerboard);
@@ -123,14 +124,24 @@ fn cellular_automata_pass(mut noise: [[u8; HEIGHT]; WIDTH]) -> [[u8; HEIGHT]; WI
                     2,                   //Lower mid
                     2,                   //Lower right
                 ],
+                (1..=_W, 1..=_H) => [
+                    noise[x - 1][y - 1], //Upper left
+                    noise[x][y - 1],     //Upper mid
+                    noise[x + 1][y - 1], //Upper right
+                    noise[x - 1][y],     //Mid left
+                    noise[x + 1][y],     //Mid right
+                    noise[x - 1][y + 1], //Lower left
+                    noise[x][y - 1],     //Lower mid
+                    noise[x + 1][y + 1], //Lower right
+                ],
                 (_, _) => [
                     2, //Upper left
-                    2, //Upper mid
+                    2,     //Upper mid
                     2, //Upper right
-                    2, //Mid left
-                    2, //Mid right
+                    2,     //Mid left
+                    2,     //Mid right
                     2, //Lower left
-                    2, //Lower mid
+                    2,     //Lower mid
                     2, //Lower right
                 ],
             };
@@ -153,7 +164,7 @@ fn white_noise() -> [[u8; HEIGHT]; WIDTH] {
 
     for y in 0..HEIGHT {
         for x in 0..WIDTH {
-            grid[x][y] = rng.gen_range(0..2);
+            grid[x][y] = if rng.gen_range(0..101) > NOISE_AMOUNT {1}else{0};
         }
     }
 
